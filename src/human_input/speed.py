@@ -9,7 +9,7 @@ class Speed:
     velocity_peak: float = 0.38
 
     # Mouse Path Geometry
-    bend_fraction: float = 0.08
+    bend_fraction: float = 0.06
     curvature_slowdown: float = 1.5
     correction_probability: tuple[float, ...] = (0.50, 0.30, 0.15, 0.05)
     initial_error_scale: float = 0.65

@@ -1,7 +1,4 @@
-import mouse
-
 from math import erf, log, log2, sqrt
-from time import perf_counter, sleep
 
 import numpy as np
 from numpy.typing import NDArray
