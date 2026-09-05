@@ -1,0 +1,35 @@
+[project]
+name = "human-input"
+version = "0.1.0"
+description = "A Python library that adds realistic timing and movement to mouse and keyboard control"
+readme = "README.md"
+authors = [
+    { name = "Purgso" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "keyboard>=0.13.5",
+    "mouse>=0.7.1",
+    "numpy>=2.5.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/Purgso/human-input"
+Repository = "https://github.com/Purgso/human-input"
+Issues = "https://github.com/Purgso/human-input/issues"
+
+[build-system]
+requires = ["uv_build>=0.12.10,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.16.6",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
