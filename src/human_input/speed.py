@@ -11,7 +11,7 @@ class Speed:
     # Mouse Path Geometry
     bend_fraction: float = 0.08
     curvature_slowdown: float = 1.5
-    correction_probability: tuple[float, ...] = (0.20, 0.45, 0.25, 0.10)
+    correction_probability: tuple[float, ...] = (0.50, 0.30, 0.15, 0.05)
     initial_error_scale: float = 0.65
     correction_decay: float = 0.35
     endpoint_sigma: float = 0.22
