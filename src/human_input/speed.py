@@ -15,6 +15,7 @@ class Speed:
     initial_error_scale: float = 0.65
     correction_decay: float = 0.35
     endpoint_sigma: float = 0.22
+    impulse_overlap: float = 0.1
 
     # Limits
     minimum_time: float = 0.05
