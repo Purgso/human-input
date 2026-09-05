@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from math import erf, log, log2, sqrt
 
 import numpy as np
@@ -7,42 +8,90 @@ from .speed import speed
 
 _rng = np.random.default_rng()
 
-def generate_trajectory(start: tuple[float, float], end: tuple[float, float], target_size: float | tuple[float, float]) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
-    def fitts_law(displacement: NDArray[np.float64], target_width: float, target_height: float) -> float:
+Point = tuple[float, float]
+
+
+def generate_trajectory(
+    start: Point,
+    end: Point | Sequence[Point],
+    target_size: float | tuple[float, float],
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    def fitts_law(
+        displacement: NDArray[np.float64], target_width: float, target_height: float
+    ) -> float:
         distance = np.linalg.norm(displacement)
-        effective_width = max(1.0, (abs(displacement[0]) * target_width + abs(displacement[1]) * target_height) / distance)
+        if distance == 0:
+            return speed.fitts_a
+        effective_width = max(
+            1.0,
+            (abs(displacement[0]) * target_width + abs(displacement[1]) * target_height)
+            / distance,
+        )
         return speed.fitts_a + speed.fitts_b * log2(1 + distance / effective_width)
-    def randomize_endpoint(endpoint: NDArray[np.float64], target_width: float, target_height: float) -> NDArray[np.float64]:
+
+    def randomize_endpoint(
+        endpoint: NDArray[np.float64], target_width: float, target_height: float
+    ) -> NDArray[np.float64]:
         r = _rng.uniform(0, 1)
         theta = _rng.uniform(0, 2 * np.pi)
         dx = r * target_width * np.cos(theta) / 2.0
         dy = r * target_height * np.sin(theta) / 2.0
         return endpoint + np.array([dx, dy], dtype=np.float64)
-    def generate_waypoints(startpoint: NDArray[np.float64], endpoint: NDArray[np.float64], target_size: tuple[float, float], corrections: int) -> NDArray[np.float64]:
+
+    def generate_guidepoint(
+        startpoint: NDArray[np.float64], endpoint: NDArray[np.float64]
+    ) -> NDArray[np.float64] | None:
         displacement = endpoint - startpoint
         distance = float(np.linalg.norm(displacement))
 
         if distance == 0:
-            return np.vstack([startpoint, endpoint])
+            return None
 
         direction = displacement / distance
         perpendicular = np.array([-direction[1], direction[0]], dtype=np.float64)
 
+        bend_sigma = distance * speed.bend_fraction
+        bend = float(_rng.normal(0.2 * bend_sigma, bend_sigma))
+        return startpoint + displacement * _rng.uniform(0.6, 0.8) + perpendicular * bend
+
+    def generate_waypoints(
+        startpoint: NDArray[np.float64],
+        endpoints: NDArray[np.float64],
+        target_size: tuple[float, float],
+        corrections: int,
+    ) -> tuple[NDArray[np.float64], list[int]]:
+        points = [startpoint]
+        endpoint_indices = []
+
+        for endpoint in endpoints:
+            guidepoint = generate_guidepoint(points[-1], endpoint)
+            if guidepoint is not None:
+                points.append(guidepoint)
+            points.append(endpoint)
+            endpoint_indices.append(len(points) - 1)
+
+        if corrections == 0:
+            return np.asarray(points, dtype=np.float64), endpoint_indices
+
+        # Replace the final endpoint with an initial miss followed by progressively
+        # smaller corrections. Intermediate targets are approached directly.
+        endpoint = endpoints[-1]
+        segment_start = endpoints[-2] if len(endpoints) > 1 else startpoint
+        displacement = endpoint - segment_start
+        distance = float(np.linalg.norm(displacement))
+        if distance == 0:
+            return np.asarray(points, dtype=np.float64), endpoint_indices
+
+        direction = displacement / distance
+        perpendicular = np.array([-direction[1], direction[0]], dtype=np.float64)
         target_scale = sqrt(target_size[0] * target_size[1])
 
-        bend_sigma = min(distance * speed.bend_fraction, target_scale * 2.0)
-        bend = float(_rng.normal(0, bend_sigma))
-        guidepoint = startpoint + displacement * _rng.uniform(0.35, 0.60) + perpendicular * bend
-
-        points = [startpoint, guidepoint]
-        if corrections == 0:
-            points.append(endpoint)
-            return np.asarray(points, dtype=np.float64)
+        points.pop()
 
         error_scale = min(target_scale * speed.initial_error_scale, distance * 0.15)
         longitudinal_error = _rng.normal(0.0, error_scale)
         lateral_error = _rng.normal(0.0, error_scale * 0.7)
-        error = (direction * longitudinal_error + perpendicular * lateral_error)
+        error = direction * longitudinal_error + perpendicular * lateral_error
         points.append(endpoint + error)
 
         remaining_error = error
@@ -54,16 +103,25 @@ def generate_trajectory(start: tuple[float, float], end: tuple[float, float], ta
                 decay *= -1.0
             remaining_error *= decay
 
-            correction_noise = _rng.normal(0.0, error_scale * 0.08 / correction_index, size=2)
+            correction_noise = _rng.normal(
+                0.0, error_scale * 0.08 / correction_index, size=2
+            )
             points.append(endpoint + remaining_error + correction_noise)
 
         points.append(endpoint)
+        endpoint_indices[-1] = len(points) - 1
 
-        return np.asarray(points, dtype=np.float64)
-    def catmull_rom_path(points: NDArray[np.float64], samples_per_segment: int = 50) -> NDArray[np.float64]:
+        return np.asarray(points, dtype=np.float64), endpoint_indices
+
+    def catmull_rom_segments(
+        points: NDArray[np.float64], samples_per_segment: int = 50
+    ) -> list[NDArray[np.float64]]:
         if len(points) == 2:
             t = np.linspace(0.0, 1.0, samples_per_segment)
-            return points[0][None, :] * (1.0 - t)[:, None] + points[1][None, :] * t[:, None]
+            return [
+                points[0][None, :] * (1.0 - t)[:, None]
+                + points[1][None, :] * t[:, None]
+            ]
 
         padded = np.vstack([points[0], points, points[-1]])
 
@@ -82,16 +140,21 @@ def generate_trajectory(start: tuple[float, float], end: tuple[float, float], ta
             )
             segments.append(segment)
 
-        return np.vstack(segments)
-    def schedule_path(path: NDArray[np.float64], duration: float) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+        return segments
+
+    def schedule_path(
+        path: NDArray[np.float64], duration: float
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
         def lognormal_progress(timestamps: NDArray[np.float64]) -> NDArray[np.float64]:
             peak_time = max(duration * speed.velocity_peak, 1e-6)
             mu = log(peak_time) + speed.lognormal_sigma**2
             safe_time = np.maximum(timestamps, 1e-9)
 
-            z = (np.log(safe_time) - mu) / (speed.lognormal_sigma * sqrt(2))
+            z = (np.log(safe_time) - mu) / (speed.lognormal_sigma * np.sqrt(2))
 
-            cdf = np.asarray([0.5 * (1.0 + erf(z_val)) for z_val in z], dtype=np.float64)
+            cdf = np.asarray(
+                [0.5 * (1.0 + erf(z_val)) for z_val in z], dtype=np.float64
+            )
             cdf[0] = 0.0
 
             total = cdf[-1]
@@ -99,6 +162,7 @@ def generate_trajectory(start: tuple[float, float], end: tuple[float, float], ta
                 return np.linspace(0.0, 1.0, len(timestamps))
 
             return cdf / total
+
         def curvature_weighted_progress() -> NDArray[np.float64]:
             segment_vectors = np.diff(path, axis=0)
             segment_lengths = np.linalg.norm(segment_vectors, axis=1)
@@ -115,7 +179,9 @@ def generate_trajectory(start: tuple[float, float], end: tuple[float, float], ta
                 curvature[1:-1] = np.arccos(dot_products)
 
             segment_curvatures = (curvature[:-1] + curvature[1:]) / 2.0
-            weighted_lengths = segment_lengths * (1.0 + segment_curvatures * speed.curvature_slowdown)
+            weighted_lengths = segment_lengths * (
+                1.0 + segment_curvatures * speed.curvature_slowdown
+            )
 
             cumulative = np.concatenate([[0.0], np.cumsum(weighted_lengths)])
 
@@ -123,6 +189,7 @@ def generate_trajectory(start: tuple[float, float], end: tuple[float, float], ta
                 return np.linspace(0.0, 1.0, len(path))
 
             return cumulative / cumulative[-1]
+
         sample_count = max(2, round(duration * 60) + 1)
 
         timestamps = np.linspace(0.0, duration, sample_count)
@@ -143,11 +210,53 @@ def generate_trajectory(start: tuple[float, float], end: tuple[float, float], ta
         raise ValueError("Target size must be positive.")
 
     startpoint = np.asarray(start, dtype=np.float64)
-    target_center = np.asarray(end, dtype=np.float64)
+    target_centers = np.asarray(end, dtype=np.float64)
+    if target_centers.shape == (2,):
+        target_centers = target_centers.reshape(1, 2)
+    if target_centers.ndim != 2 or target_centers.shape[1] != 2:
+        raise ValueError("Targets must be a point or a non-empty series of points.")
+    if len(target_centers) == 0:
+        raise ValueError("Targets must contain at least one point.")
 
-    base_move_time = fitts_law(target_center - startpoint, target_width, target_height)
-    endpoint = randomize_endpoint(target_center, target_width, target_height)
-    corrections = _rng.choice(len(speed.correction_probability), p=speed.correction_probability)
-    waypoints = generate_waypoints(startpoint, endpoint, (target_width, target_height), corrections)
-    path = catmull_rom_path(waypoints)
-    return schedule_path(path, base_move_time)
+    centers_with_start = np.vstack([startpoint, target_centers])
+    move_times = np.asarray(
+        [
+            fitts_law(displacement, target_width, target_height)
+            for displacement in np.diff(centers_with_start, axis=0)
+        ],
+        dtype=np.float64,
+    )
+    endpoints = np.asarray(
+        [
+            randomize_endpoint(center, target_width, target_height)
+            for center in target_centers
+        ],
+        dtype=np.float64,
+    )
+    corrections = _rng.choice(
+        len(speed.correction_probability), p=speed.correction_probability
+    )
+    waypoints, endpoint_indices = generate_waypoints(
+        startpoint, endpoints, (target_width, target_height), corrections
+    )
+    path_segments = catmull_rom_segments(waypoints)
+
+    timestamp_sections = []
+    position_sections = []
+    start_segment = 0
+    elapsed = 0.0
+
+    for duration, endpoint_index in zip(move_times, endpoint_indices, strict=True):
+        section_path = np.vstack(path_segments[start_segment:endpoint_index])
+        section_timestamps, section_positions = schedule_path(section_path, duration)
+
+        if timestamp_sections:
+            section_timestamps = section_timestamps[1:]
+            section_positions = section_positions[1:]
+
+        timestamp_sections.append(section_timestamps + elapsed)
+        position_sections.append(section_positions)
+        elapsed += duration
+        start_segment = endpoint_index
+
+    return np.concatenate(timestamp_sections), np.vstack(position_sections)

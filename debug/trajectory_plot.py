@@ -80,8 +80,8 @@ def plot_movement(
 
     plt.show()
 
-start = (0, 0)
-end = (200, 100)
+start = (100, 100)
+end = ((100, 400), (400, 400), (400, 100), (100, 100))
 target = (10, 20)
 
 timestamps, path = generate_trajectory(start, end, target)
@@ -89,6 +89,6 @@ timestamps, path = generate_trajectory(start, end, target)
 plot_movement(
     path,
     timestamps,
-    target_center=end,
+    target_center=end[-1],
     target_size=target,
 )
