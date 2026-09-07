@@ -6,11 +6,11 @@ readme = "README.md"
 authors = [
     { name = "Purgso" }
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.8"
 dependencies = [
     "keyboard>=0.13.5",
     "mouse>=0.7.1",
-    "numpy>=2.5.2",
+    "numpy>=1.20",
 ]
 
 [project.urls]
@@ -24,7 +24,8 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "pytest>=9.1.1",
+    # pytest 9 dropped Python 3.8 and 3.9 support.
+    "pytest>=7.4,<9",
     "ruff>=0.16.6",
 ]
 
