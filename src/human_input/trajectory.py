@@ -164,7 +164,7 @@ def generate_trajectory(
         for i, curve_point in enumerate(curve_points):
             points.insert(2 * i + 1, curve_point)
 
-    def catmull_rom_splines(
+    def cubic_hermite_splines(
         points: List[Point],
         spline_count: int,
         samples_per_segment: int = 50,
@@ -290,7 +290,7 @@ def generate_trajectory(
         start_times.append(start_times[-1] + durations[i - 1] - overlap)
 
     add_curve_points(control_points)
-    segments = catmull_rom_splines(control_points, len(cdfs))
+    segments = cubic_hermite_splines(control_points, len(cdfs))
 
     total_duration = start_times[-1] + durations[-1]
 
