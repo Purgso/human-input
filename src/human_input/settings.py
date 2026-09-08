@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Tuple
+
 
 @dataclass
 class Settings:
@@ -12,7 +14,7 @@ class Settings:
     # Mouse Path Geometry
     bend_fraction: float = 0.02
     curvature_slowdown: float = 0.33
-    correction_probability: Tuple[float, ...] = (0.50, 0.30, 0.15, 0.05)
+    correction_probability: tuple[float, ...] = (0.50, 0.30, 0.15, 0.05)
     initial_error_scale: float = 0.65
     correction_decay: float = 0.35
     endpoint_sigma: float = 0.22
@@ -43,18 +45,35 @@ class Settings:
     default_hold_sigma: float = 0.349903662
     hold_max: float = 1.0
 
-@dataclass
+
+@dataclass(frozen=True)
 class Speed:
     mouse_move_scaling: float
     mouse_click_scaling: float
     keyboard_scaling: float
 
-SUPERHUMAN = Speed(mouse_move_scaling=5.0, mouse_click_scaling=5.0, keyboard_scaling=5.0)
+    def __post_init__(self) -> None:
+        if (
+            min(
+                self.mouse_move_scaling,
+                self.mouse_click_scaling,
+                self.keyboard_scaling,
+            )
+            <= 0
+        ):
+            raise ValueError("Speed scaling values must be positive.")
+
+
+SUPERHUMAN = Speed(
+    mouse_move_scaling=5.0, mouse_click_scaling=5.0, keyboard_scaling=5.0
+)
 VERY_FAST = Speed(mouse_move_scaling=2.0, mouse_click_scaling=2.0, keyboard_scaling=2.0)
 FAST = Speed(mouse_move_scaling=1.5, mouse_click_scaling=1.5, keyboard_scaling=1.5)
 NORMAL = Speed(mouse_move_scaling=1.0, mouse_click_scaling=1.0, keyboard_scaling=1.0)
 SLOW = Speed(mouse_move_scaling=0.5, mouse_click_scaling=0.5, keyboard_scaling=0.5)
-VERY_SLOW = Speed(mouse_move_scaling=0.25, mouse_click_scaling=0.25, keyboard_scaling=0.25)
+VERY_SLOW = Speed(
+    mouse_move_scaling=0.25, mouse_click_scaling=0.25, keyboard_scaling=0.25
+)
 
 speed: Speed = NORMAL
 settings: Settings = Settings()
