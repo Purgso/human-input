@@ -25,7 +25,7 @@ mouse.path_to((800, 450), target_size=40)
 ```
 
 Pass several waypoints to move through them in one continuous trajectory. Target
-size can be a single value for a square or a `(width, height)` pair:
+size can be a single value for a circle or a `(width, height)` pair for an ellipse:
 
 ```python
 mouse.path_to(
@@ -114,7 +114,7 @@ mouse.visualize_path(
 ### Mouse movement
 
 Each requested movement is split into target-to-target segments. Segment duration
-is estimated with [Fitts's law](https://www2.psychology.uiowa.edu/faculty/mordkoff/infoproc/pdfs/Fitts%201954.pdf),
+is estimated with [Fitts's law](https://www.lri.fr/~mbl/ENS/FundHCI/material/papers/Fitts-JEP54.pdf),
 using movement distance and effective target width to model the speed-accuracy
 tradeoff.
 
@@ -122,7 +122,7 @@ The path generator randomizes control points within the target regions, adds
 small corrective movements near the destination, and joins the points with
 smooth spline curves. Its overall trajectory construction, overlapping movement
 segments, and lognormal velocity profiles were informed by the
-[Sigma-Lognormal model](https://doi.org/10.1016/j.patcog.2008.10.017) of rapid
+[Sigma-Lognormal model](https://ftp.jcbuisson.dev/handwriting/Plamondon_Djioua_2006.pdf) of rapid
 human movement. The implementation is inspired by that model rather than a full
 biomechanical reproduction of it.
 
@@ -130,15 +130,14 @@ biomechanical reproduction of it.
 
 Click press and release delays are sampled from lognormal distributions. Their
 parameters were derived using click-duration observations from the
-[Mouse Dynamics Dataset for Behavioral User Substitution Detection in Electronic Testing](https://doi.org/10.17632/3rfsbcmgfw.1).
+[Mouse Dynamics Dataset for Behavioral User Substitution Detection in Electronic Testing](https://data.mendeley.com/datasets/3rfsbcmgfw/1).
 
 ### Keyboard input
 
 Typing uses separate flight-time (key-down to following key-down) and hold-time
 (key-down to key-up) distributions for individual character codes. The bundled
 parameters were created from the
-[Timing distributions in free text keystroke dynamics profiles](https://doi.org/10.17632/sjk7kz35nh.1)
-dataset and its companion study,
-[On the shape of timings distributions in free-text keystroke dynamics profiles](https://doi.org/10.1016/j.heliyon.2021.e08413).
+[Timing distributions in free text keystroke dynamics profiles](https://data.mendeley.com/datasets/sjk7kz35nh/1)
+dataset.
 Unknown characters fall back to general timing distributions, and all generated
 press/release events are ordered before execution so natural rollover can occur.
