@@ -2,27 +2,11 @@ import random
 from math import acos, cos, erf, log, log2, pi, sin, sqrt
 from typing import List, Sequence, Tuple, Union
 
-from .speed import speed
+from .settings import settings, speed
 
 _rng = random.Random()
 
 Point = Tuple[float, float]
-
-
-"""
-Create a human-like trajectory through two or more points.
-1. Calculate the control points by randomly shifting the end points based on the size of the target.
-2. Add 0-3 correction points before the final target point.
-3. Generate a smooth trajectory through the control points.
-4. Add curve points between control points at random offsets from the smooth trajectory.
-5. Create a series of Bezier curves through the control and curve points to form the final trajectory.
-6. Create lognormal velocity profiles for each segment of the trajectory.
-7. Overlap the velocity profiles of consecutive segments to create a smooth overall motion that's slower near the control points.
-8. Reduce the velocity profiles in regions of sharper curvature.
-9. Generate the final path as a series of x and y coordinates with time stamps.
-10. Add noise to the trajectory to simulate human-like imperfections.
-11. Return the final trajectory
-"""
 
 def generate_trajectory(
     start: Point,
@@ -32,10 +16,10 @@ def generate_trajectory(
     def fitts_law(displacement: Tuple[float, float]) -> float:
         distance = sqrt(displacement[0]**2 + displacement[1]**2)
         if distance == 0:
-            return speed.fitts_a
+            return settings.fitts_a
         effective_width = max(1.0, abs(displacement[0]) * target_width + abs(displacement[1]) * target_height) / distance
-        duration = speed.fitts_a + speed.fitts_b * log2(1.0 + distance / effective_width)
-        return min(speed.maximum_time, max(speed.minimum_time, duration))
+        duration = settings.fitts_a + settings.fitts_b * log2(1.0 + distance / effective_width)
+        return speed.mouse_move_scaling * min(settings.maximum_time, max(settings.minimum_time, duration))
 
     def randomize_controlpoint(point: Point) -> Point:
         r = _rng.uniform(0, 0.95)
@@ -63,7 +47,7 @@ def generate_trajectory(
         return angles
 
     def add_correction_points(points: List[Point]) -> None:
-        num_corrections = _rng.choices(list(range(len(speed.correction_probability))), weights=speed.correction_probability, k=1)[0]
+        num_corrections = _rng.choices(list(range(len(settings.correction_probability))), weights=settings.correction_probability, k=1)[0]
         endpoint = points[-1]
         startpoint = points[-2]
 
@@ -76,7 +60,7 @@ def generate_trajectory(
         direction = (displacement[0] / distance, displacement[1] / distance)
         perpendicular = (-direction[1], direction[0])
 
-        error_scale = min(target_scale * speed.initial_error_scale, distance * 0.15)
+        error_scale = min(target_scale * settings.initial_error_scale, distance * 0.15)
         longitudinal_error = _rng.normalvariate(0.0, error_scale)
         lateral_error = _rng.normalvariate(0.0, error_scale * 0.7)
         error = (longitudinal_error * direction[0] + lateral_error * perpendicular[0],
@@ -89,7 +73,7 @@ def generate_trajectory(
 
             points.insert(-1, correction_point)
 
-            decay = _rng.normalvariate(speed.correction_decay, speed.correction_decay / 3)
+            decay = _rng.normalvariate(settings.correction_decay, settings.correction_decay / 3)
             decay = min(0.65, max(0.10, decay))
             if _rng.random() < 0.25:
                 decay *= -1
@@ -104,7 +88,7 @@ def generate_trajectory(
     def add_curve_points(points: List[Point]) -> None:
         curve_point_shifts = [_rng.uniform(0.35, 0.7) for _ in range(len(points) - 1)]
         distances = [sqrt((points[i+1][0] - points[i][0])**2 + (points[i+1][1] - points[i][1])**2) for i in range(len(points) - 1)]
-        bend_sigmas = [d * speed.bend_fraction for d in distances]
+        bend_sigmas = [d * settings.bend_fraction for d in distances]
         bends = [_rng.normalvariate(sigma, sigma) * _rng.choice([-1, 1]) for sigma in bend_sigmas]
         
         if len(points) == 2:
@@ -126,7 +110,7 @@ def generate_trajectory(
                 t = curve_point_shifts[i - 1]
                 t2 = t * t
                 t3 = t2 * t
-                tangent_scale = 0.5 * (1.0 - speed.tension)
+                tangent_scale = 0.5 * (1.0 - settings.tension)
 
                 m1x = tangent_scale * (p2[0] - p0[0])
                 m1y = tangent_scale * (p2[1] - p0[1])
@@ -195,7 +179,7 @@ def generate_trajectory(
                 t = j / samples_per_segment
                 t2 = t * t
                 t3 = t2 * t
-                tangent_scale = 0.5 * (1.0 - speed.tension)
+                tangent_scale = 0.5 * (1.0 - settings.tension)
 
                 m1x = tangent_scale * (p2[0] - p0[0])
                 m1y = tangent_scale * (p2[1] - p0[1])
@@ -232,8 +216,8 @@ def generate_trajectory(
 
     def generate_cdfs(steps: List[int]) -> List[List[float]]:
         cdfs = []
-        sigma = speed.lognormal_sigma
-        peak_time = max(speed.velocity_peak, 1e-6)
+        sigma = settings.lognormal_sigma
+        peak_time = max(settings.velocity_peak, 1e-6)
         mu = log(peak_time) + sigma**2
 
         for count in steps:
@@ -300,8 +284,8 @@ def generate_trajectory(
     for i in range(1, len(durations)):
         overlap = (
             (durations[i - 1] + durations[i])
-            * speed.impulse_overlap
-            * (1.0 - speed.curvature_slowdown * angles[i - 1] / pi)
+            * settings.impulse_overlap
+            * (1.0 - settings.curvature_slowdown * angles[i - 1] / pi)
         )
         start_times.append(start_times[-1] + durations[i - 1] - overlap)
 

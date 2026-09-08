@@ -21,7 +21,7 @@ from mouse import (
 )
 
 from .trajectory import generate_trajectory, Point, _rng
-from .speed import speed
+from .settings import settings, speed
 
 __all__ = [
     "DOUBLE",
@@ -159,20 +159,20 @@ def visualize_path(
 
     plt.show()
 
-
+    
 def click(button: str = LEFT) -> None:
     press(button)
-    sleep(min(exp(speed.single_click_mu + speed.single_click_sigma * _rng.normalvariate(0.0, 1.0)), speed.single_click_max))
+    sleep(speed.mouse_click_scaling * min(exp(settings.single_click_mu + settings.single_click_sigma * _rng.normalvariate(0.0, 1.0)), settings.single_click_max))
     release(button)
-    sleep(min(exp(speed.single_click_mu + speed.single_click_sigma * _rng.normalvariate(0.0, 1.0)), speed.single_click_max))
+    sleep(speed.mouse_click_scaling * min(exp(settings.single_click_mu + settings.single_click_sigma * _rng.normalvariate(0.0, 1.0)), settings.single_click_max))
 
 def double_click(button: str = LEFT) -> None:
     press(button)
-    sleep(min(exp(speed.first_click_mu + speed.first_click_sigma * _rng.normalvariate(0.0, 1.0)), speed.first_click_max))
+    sleep(speed.mouse_click_scaling * min(exp(settings.first_click_mu + settings.first_click_sigma * _rng.normalvariate(0.0, 1.0)), settings.first_click_max))
     release(button)
-    sleep(min(exp(speed.second_click_mu + speed.second_click_sigma * _rng.normalvariate(0.0, 1.0)), speed.second_click_max))
+    sleep(speed.mouse_click_scaling * min(exp(settings.second_click_mu + settings.second_click_sigma * _rng.normalvariate(0.0, 1.0)), settings.second_click_max))
     press(button)
-    sleep(min(exp(speed.second_click_mu + speed.second_click_sigma * _rng.normalvariate(0.0, 1.0)), speed.second_click_max))
+    sleep(speed.mouse_click_scaling * min(exp(settings.second_click_mu + settings.second_click_sigma * _rng.normalvariate(0.0, 1.0)), settings.second_click_max))
     release(button)
 
 def right_click() -> None:

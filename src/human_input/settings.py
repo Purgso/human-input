@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Tuple
 
-@dataclass(frozen=True)
-class Speed:
+@dataclass
+class Settings:
     # Mouse Movement Speed
     fitts_a: float = 0.07
     fitts_b: float = 0.105
@@ -34,14 +34,27 @@ class Speed:
     second_click_sigma: float = 0.6
     second_click_max: float = 0.75
 
-    # Typing Speed
-    key_scaling: float = 1.0
+    # Typing Timings
+    default_float_mu: float = 5.378254224
+    default_float_sigma: float = 0.713738600
+    float_max: float = 2.0
 
-SUPERHUMAN = ...
-VERY_FAST = ...
-FAST = ...
-NORMAL = Speed()
-SLOW = ...
-VERY_SLOW = ...
+    default_hold_mu: float = 4.489425935
+    default_hold_sigma: float = 0.349903662
+    hold_max: float = 1.0
+
+@dataclass
+class Speed:
+    mouse_move_scaling: float
+    mouse_click_scaling: float
+    keyboard_scaling: float
+
+SUPERHUMAN = Speed(mouse_move_scaling=5.0, mouse_click_scaling=5.0, keyboard_scaling=5.0)
+VERY_FAST = Speed(mouse_move_scaling=2.0, mouse_click_scaling=2.0, keyboard_scaling=2.0)
+FAST = Speed(mouse_move_scaling=1.5, mouse_click_scaling=1.5, keyboard_scaling=1.5)
+NORMAL = Speed(mouse_move_scaling=1.0, mouse_click_scaling=1.0, keyboard_scaling=1.0)
+SLOW = Speed(mouse_move_scaling=0.5, mouse_click_scaling=0.5, keyboard_scaling=0.5)
+VERY_SLOW = Speed(mouse_move_scaling=0.25, mouse_click_scaling=0.25, keyboard_scaling=0.25)
 
 speed: Speed = NORMAL
+settings: Settings = Settings()
