@@ -33,7 +33,7 @@ wheels = [
 
 [[package]]
 name = "human-input"
-version = "1.0rc1"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "keyboard" },
