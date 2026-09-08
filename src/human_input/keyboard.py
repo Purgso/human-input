@@ -11,7 +11,87 @@ import keyboard as _keyboard
 
 from .settings import settings, speed
 
-__all__ = ["write"]
+__all__ = [
+    "KEY_DOWN",
+    "KEY_UP",
+    "KeyboardEvent",
+    "add_abbreviation",
+    "add_hotkey",
+    "block_key",
+    "clear_all_hotkeys",
+    "get_typed_strings",
+    "hook",
+    "hook_key",
+    "is_pressed",
+    "key_to_scan_codes",
+    "on_press",
+    "on_press_key",
+    "on_release",
+    "on_release_key",
+    "play",
+    "press",
+    "press_and_release",
+    "read_event",
+    "read_hotkey",
+    "read_key",
+    "record",
+    "release",
+    "remap_key",
+    "remove_abbreviation",
+    "remove_hotkey",
+    "restore_modifiers",
+    "restore_state",
+    "send",
+    "stash_state",
+    "unblock_key",
+    "unhook",
+    "unhook_all",
+    "unhook_key",
+    "unremap_key",
+    "wait",
+    "write",
+]
+
+
+# Public passthroughs to the underlying keyboard package. ``write`` below is
+# intentionally humanized; the rest retain the upstream behavior/signatures.
+KEY_DOWN = _keyboard.KEY_DOWN
+KEY_UP = _keyboard.KEY_UP
+KeyboardEvent = _keyboard.KeyboardEvent
+add_abbreviation = _keyboard.add_abbreviation
+add_hotkey = _keyboard.add_hotkey
+block_key = _keyboard.block_key
+clear_all_hotkeys = _keyboard.clear_all_hotkeys
+get_typed_strings = _keyboard.get_typed_strings
+hook = _keyboard.hook
+hook_key = _keyboard.hook_key
+is_pressed = _keyboard.is_pressed
+key_to_scan_codes = _keyboard.key_to_scan_codes
+on_press = _keyboard.on_press
+on_press_key = _keyboard.on_press_key
+on_release = _keyboard.on_release
+on_release_key = _keyboard.on_release_key
+play = _keyboard.play
+press = _keyboard.press
+press_and_release = _keyboard.press_and_release
+read_event = _keyboard.read_event
+read_hotkey = _keyboard.read_hotkey
+read_key = _keyboard.read_key
+record = _keyboard.record
+release = _keyboard.release
+remap_key = _keyboard.remap_key
+remove_abbreviation = _keyboard.remove_abbreviation
+remove_hotkey = _keyboard.remove_hotkey
+restore_modifiers = _keyboard.restore_modifiers
+restore_state = _keyboard.restore_state
+send = _keyboard.send
+stash_state = _keyboard.stash_state
+unblock_key = _keyboard.unblock_key
+unhook = _keyboard.unhook
+unhook_all = _keyboard.unhook_all
+unhook_key = _keyboard.unhook_key
+unremap_key = _keyboard.unremap_key
+wait = _keyboard.wait
 
 
 # Rounded means of the corresponding columns in keypress_timings_ascii.csv.

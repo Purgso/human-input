@@ -3,45 +3,83 @@ from typing import Optional, Sequence, Tuple, Union
 from math import exp
 
 import numpy as np
-
-from mouse import (
-    DOUBLE,
-    DOWN,
-    LEFT,
-    MIDDLE,
-    RIGHT,
-    UP,
-    X2,
-    X,
-    get_position,
-    move,
-    press,
-    release,
-    wheel,
-)
+import mouse as _mouse
 
 from .trajectory import generate_trajectory, Point, _rng
 from .settings import settings, speed
 
 __all__ = [
+    "ButtonEvent",
     "DOUBLE",
     "DOWN",
     "LEFT",
     "MIDDLE",
+    "MoveEvent",
     "RIGHT",
     "UP",
+    "WheelEvent",
     "X2",
     "X",
     "click",
-    "right_click",
     "double_click",
+    "drag",
+    "get_position",
+    "hold",
+    "hook",
+    "is_pressed",
+    "on_button",
+    "on_click",
+    "on_double_click",
+    "on_middle_click",
+    "on_right_click",
     "path_to",
+    "play",
     "visualize_path",
     "press",
+    "record",
     "release",
+    "replay",
+    "right_click",
+    "unhook",
+    "unhook_all",
+    "wait",
     "wheel",
     "Point",
 ]
+
+
+# Public passthroughs to the underlying mouse package. The click helpers below
+# are intentionally humanized; movement and event APIs keep upstream behavior.
+ButtonEvent = _mouse.ButtonEvent
+DOUBLE = _mouse.DOUBLE
+DOWN = _mouse.DOWN
+LEFT = _mouse.LEFT
+MIDDLE = _mouse.MIDDLE
+MoveEvent = _mouse.MoveEvent
+RIGHT = _mouse.RIGHT
+UP = _mouse.UP
+WheelEvent = _mouse.WheelEvent
+X2 = _mouse.X2
+X = _mouse.X
+drag = _mouse.drag
+get_position = _mouse.get_position
+hold = _mouse.hold
+hook = _mouse.hook
+is_pressed = _mouse.is_pressed
+on_button = _mouse.on_button
+on_click = _mouse.on_click
+on_double_click = _mouse.on_double_click
+on_middle_click = _mouse.on_middle_click
+on_right_click = _mouse.on_right_click
+play = _mouse.play
+press = _mouse.press
+record = _mouse.record
+release = _mouse.release
+replay = _mouse.replay
+unhook = _mouse.unhook
+unhook_all = _mouse.unhook_all
+wait = _mouse.wait
+wheel = _mouse.wheel
 
 
 def path_to(
@@ -68,10 +106,10 @@ def path_to(
                 np.interp(elapsed, timestamps, ys),
             ]
         )
-        move(int(position[0]), int(position[1]))
+        _mouse.move(int(position[0]), int(position[1]))
         sleep(0.001)
     final_target = (xs[-1], ys[-1])
-    move(int(final_target[0]), int(final_target[1]))
+    _mouse.move(int(final_target[0]), int(final_target[1]))
 
 
 def visualize_path(
