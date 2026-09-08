@@ -7,19 +7,18 @@ from dataclasses import dataclass
 class Settings:
     # Mouse Movement Speed
     fitts_a: float = 0.07
-    fitts_b: float = 0.105
+    fitts_b: float = 0.20
     lognormal_sigma: float = 0.42
     velocity_peak: float = 0.38
 
     # Mouse Path Geometry
-    bend_fraction: float = 0.02
-    curvature_slowdown: float = 0.33
-    correction_probability: tuple[float, ...] = (0.50, 0.30, 0.15, 0.05)
-    initial_error_scale: float = 0.65
-    correction_decay: float = 0.35
-    endpoint_sigma: float = 0.22
-    impulse_overlap: float = 0.2
-    tension: float = 0.5
+    bend_fraction: float = 0.02 # How much extra bend to add to paths, as a percent of the length
+    impulse_overlap: float = 0.2 # How much overlap there is between consecutive impulses, as a percent of the impulse duration
+    curvature_slowdown: float = 0.33 # Percent reduction in impulse overlap for sharp corners
+    correction_probability: tuple[float, ...] = (0.50, 0.30, 0.15, 0.05) # Probabilities for the number of corrections made at the end of a path
+    initial_error_scale: float = 0.65 # Maximum distance the mouse can miss the target by on the initial attempt, as a percentage of the diagonal of the target
+    correction_decay: float = 0.35 # Rate at which the magnitude of corrections decreases for subsequent attempts
+    tension: float = 0.6 # Higher numbers create sharper corners when the mouse moves past waypoints
 
     # Travel Time Limits
     minimum_time: float = 0.01
