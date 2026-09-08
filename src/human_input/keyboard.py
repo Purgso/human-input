@@ -1,15 +1,17 @@
 """Human-like typing built on top of the ``keyboard`` package."""
 
+from __future__ import annotations
+
 import csv
 import random
 from math import exp
 from pathlib import Path
 from time import perf_counter, sleep
-from typing import Dict, List, NamedTuple, Optional, Tuple
+from typing import NamedTuple
 
 import keyboard as _keyboard
 
-from .settings import settings, speed
+from . import settings
 
 __all__ = [
     "KEY_DOWN",
@@ -130,8 +132,8 @@ class _KeyEvent(NamedTuple):
     key: str
 
 
-def _load_timings() -> Dict[str, Dict[int, Tuple[float, float]]]:
-    timings: Dict[str, Dict[int, Tuple[float, float]]] = {
+def _load_timings() -> dict[str, dict[int, tuple[float, float]]]:
+    timings: dict[str, dict[int, tuple[float, float]]] = {
         "FT": {},
         "HT": {},
     }
@@ -165,24 +167,26 @@ def _character_code(character: str) -> int:
 
 def _sample_seconds(feature: str, character_code: int) -> float:
     default = (
-        (settings.default_float_mu, settings.default_float_sigma)
+        (settings.settings.default_float_mu, settings.settings.default_float_sigma)
         if feature == "FT"
-        else (settings.default_hold_mu, settings.default_hold_sigma)
+        else (settings.settings.default_hold_mu, settings.settings.default_hold_sigma)
     )
-    maximum = settings.float_max if feature == "FT" else settings.hold_max
+    maximum = (
+        settings.settings.float_max if feature == "FT" else settings.settings.hold_max
+    )
     mu, sigma = _TIMINGS[feature].get(character_code, default)
     sampled = min(exp(_rng.normalvariate(mu, sigma)) / 1000.0, maximum)
-    return sampled * speed.keyboard_scaling
+    return sampled / settings.speed.keyboard_scaling
 
 
-def _shifted_key(character: str) -> Optional[str]:
+def _shifted_key(character: str) -> str | None:
     if "A" <= character <= "Z":
         return character.lower()
     return _SHIFTED_KEYS.get(character)
 
 
-def _generate_events(text: str) -> List[_KeyEvent]:
-    events: List[_KeyEvent] = []
+def _generate_events(text: str) -> list[_KeyEvent]:
+    events: list[_KeyEvent] = []
     press_time = 0.0
     latest_release = 0.0
     index = 0
@@ -250,7 +254,7 @@ def write(text: str) -> None:
 
     events = _generate_events(text)
     start_time = perf_counter()
-    held_keys: Dict[str, int] = {}
+    held_keys: dict[str, int] = {}
 
     try:
         for event in events:
