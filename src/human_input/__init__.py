@@ -1,1 +1,1 @@
-from .speed import Speed, SUPERHUMAN, VERY_FAST, FAST, NORMAL, SLOW, VERY_SLOW, speed
+from .settings import Settings, Speed, SUPERHUMAN, VERY_FAST, FAST, NORMAL, SLOW, VERY_SLOW, speed
