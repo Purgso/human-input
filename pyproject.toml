@@ -1,6 +1,6 @@
 [project]
 name = "human-input"
-version = "0.2.0rc1"
+version = "1.0rc1"
 description = "A Python library that adds realistic timing and movement to mouse and keyboard control"
 readme = "README.md"
 license = "MIT"
